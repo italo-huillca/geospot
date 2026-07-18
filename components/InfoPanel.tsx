@@ -3,7 +3,7 @@
 import { AnimatePresence, motion, useMotionValueEvent, useSpring, useTransform } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import Leyenda from '@/components/Leyenda';
-import { evaluarAgentes } from '@/lib/geo/agentes';
+import { evaluarIndicadores } from '@/lib/geo/evaluadores';
 import { useMounted } from '@/lib/useMounted';
 import { useAppStore } from '@/store/useAppStore';
 
@@ -80,17 +80,17 @@ function Contenido() {
       {stats && irg != null ? (
         <>
           <div>
-            <h3 className="eyebrow mb-1.5">Dictamen multiagente</h3>
+            <h3 className="eyebrow mb-1.5">Señales verificables</h3>
             <ul className="space-y-1.5 text-sm">
-              {evaluarAgentes(stats, searchParams).map((a) => (
-                <li key={a.nombre} className="flex items-baseline gap-2">
+              {evaluarIndicadores(stats, searchParams).map((indicador) => (
+                <li key={indicador.nombre} className="flex items-baseline gap-2">
                   <span
                     aria-hidden
-                    className={`h-2 w-2 shrink-0 self-center rounded-full ${VEREDICTO_CSS[a.veredicto]}`}
+                    className={`h-2 w-2 shrink-0 self-center rounded-full ${VEREDICTO_CSS[indicador.veredicto]}`}
                   />
                   <span>
-                    <span className="font-medium">{a.nombre}:</span>{' '}
-                    <span className="text-secondary">{a.resumen}</span>
+                    <span className="font-medium">{indicador.nombre}:</span>{' '}
+                    <span className="text-secondary">{indicador.resumen}</span>
                   </span>
                 </li>
               ))}

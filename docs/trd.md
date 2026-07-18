@@ -4,9 +4,9 @@
 Next.js 16 (App Router), TypeScript, Tailwind CSS v4, Zustand v5 (estado global con persistencia en `sessionStorage`, versionada), framer-motion (loader, transiciones del IRG, bottom sheets).
 
 **Backend**
-Sin backend tradicional. Next.js Route Handlers **exclusivamente como proxy seguro** de API keys:
+Sin backend tradicional. Next.js Route Handlers como capa segura de APIs y orquestación del asesor:
 
-* `POST /api/chat` → Deepseek (`deepseek-chat`, JSON mode, timeout 8 s).
+* `POST /api/chat` → Deepseek (`deepseek-v4-flash` por defecto) con tool-calling y un bucle acotado de ejecución.
 * `GET /api/isochrone?lng&lat&minutes` → Geoapify Isoline API (walk). *(Nota: originalmente Mapbox; se migró a Geoapify por decisión del producto.)*
 
 **Base de Datos**
@@ -25,13 +25,16 @@ Sin base de datos en servidor. Datasets estáticos GeoJSON en `/public/data/` (g
 
 **IA**
 
-* Deepseek para extracción de intención (rubro, monto) con prompt B2B.
-* Fallback local: parser Regex (`lib/parseIntent.ts`) si el proxy falla o excede 9 s.
+* **Ayni**, asesor financiero conversacional, puede actualizar la solicitud, consultar la evaluación territorial, simular una cuota y comparar plazos mediante herramientas.
+* Los cálculos siguen siendo deterministas y auditables (`lib/geo/evaluadores.ts` y `lib/credito.ts`); el LLM decide qué consultar y explica el resultado.
+* Al completar un análisis, el asesor interviene proactivamente con el principal riesgo, una fortaleza y el siguiente dato o acción recomendado.
+* Fallback local: parser Regex + recomendación determinista (`lib/asesor.ts`) si Deepseek no está configurado, falla o excede el timeout.
 
 **Variables de Entorno**
 
 * `NEXT_PUBLIC_GEOAPIFY_API_KEY` (tiles + isolíneas; pública por diseño, como los tokens de tiles)
 * `LLM_API_KEY` (Deepseek, solo servidor)
+* `LLM_MODEL` (opcional; por defecto `deepseek-v4-flash`)
 * `NEXT_PUBLIC_APP_URL`
 
 **Hosting y Despliegue**
@@ -39,7 +42,7 @@ Vercel (frontend estático + route handlers). Despliegue automático desde GitHu
 
 **Restricciones y Reglas Técnicas**
 
-* Procesamiento estrictamente client-side; los proxies no contienen lógica de negocio.
+* El procesamiento geoespacial sigue siendo client-side. El Route Handler del asesor solo ejecuta las mismas funciones puras compartidas para responder tool calls; no persiste solicitudes.
 * Resiliencia: todo fallo externo degrada a un fallback local visible vía Toast (naranja) sin romper el flujo.
 * Non-blocking UI: cálculos geoespaciales solo en el Worker; main thread < 50 ms.
 * Mobile-responsive: bottom sheets para formulario/chat e informe; la vista 3D es desktop-only.

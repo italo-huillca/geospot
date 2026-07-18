@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GeoSpot Risk · Agente y score</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        color: #000;
+        background: #000;
+        font-family: "Helvetica Neue", Helvetica, sans-serif;
+      }
+
+      .deck {
+        display: grid;
+        gap: 24px;
+        justify-items: center;
+        padding: 24px;
+      }
+
+      .slide {
+        position: relative;
+        width: min(100%, 1440px);
+        aspect-ratio: 16 / 9;
+        min-height: 720px;
+        padding: 58px 64px;
+        overflow: hidden;
+        background: #fff;
+      }
+
+      .kicker {
+        margin: 0 0 18px;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(48px, 5vw, 72px);
+        letter-spacing: -0.055em;
+        line-height: 0.95;
+      }
+
+      .subtitle {
+        max-width: 850px;
+        margin: 18px 0 0;
+        font-size: 20px;
+        line-height: 1.4;
+      }
+
+      .flow {
+        display: grid;
+        grid-template-columns: 1fr 42px 1fr 42px 1fr 42px 1fr;
+        align-items: start;
+        margin-top: 68px;
+      }
+
+      .node {
+        min-height: 210px;
+        padding-top: 18px;
+        border-top: 4px solid #000;
+      }
+
+      .number {
+        display: block;
+        margin-bottom: 34px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .node h2 {
+        margin: 0 0 12px;
+        font-size: 25px;
+        letter-spacing: -0.035em;
+      }
+
+      .node p {
+        margin: 0;
+        font-size: 15px;
+        line-height: 1.45;
+      }
+
+      .arrow {
+        padding-top: 76px;
+        font-size: 28px;
+        text-align: center;
+      }
+
+      .statement {
+        margin-top: 34px;
+        padding: 19px 24px;
+        color: #fff;
+        background: #000;
+        font-size: 16px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-align: center;
+        text-transform: uppercase;
+      }
+
+      .formula {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        gap: 32px;
+        margin-top: 50px;
+        padding: 24px 0;
+        border-top: 3px solid #000;
+        border-bottom: 1px solid #000;
+      }
+
+      .formula strong {
+        font-size: clamp(21px, 2vw, 29px);
+        letter-spacing: -0.03em;
+      }
+
+      .formula span {
+        font-size: 24px;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
+      .factors {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        margin-top: 42px;
+      }
+
+      .factor {
+        min-height: 175px;
+        padding: 0 24px;
+        border-left: 1px solid #000;
+      }
+
+      .factor:first-child {
+        padding-left: 0;
+        border-left: 0;
+      }
+
+      .factor:last-child {
+        padding-right: 0;
+      }
+
+      .weight {
+        display: block;
+        margin-bottom: 20px;
+        font-size: 40px;
+        font-weight: 800;
+        letter-spacing: -0.06em;
+      }
+
+      .factor h2 {
+        margin: 0 0 8px;
+        font-size: 18px;
+      }
+
+      .factor p {
+        margin: 0;
+        font-size: 13px;
+        line-height: 1.4;
+      }
+
+      .note {
+        display: grid;
+        grid-template-columns: 180px 1fr;
+        gap: 24px;
+        align-items: center;
+        margin-top: 34px;
+        padding: 18px 22px;
+        color: #fff;
+        background: #000;
+      }
+
+      .note strong {
+        font-size: 15px;
+        text-transform: uppercase;
+      }
+
+      .note p {
+        margin: 0;
+        font-size: 13px;
+        line-height: 1.4;
+      }
+
+      footer {
+        position: absolute;
+        right: 64px;
+        bottom: 24px;
+        left: 64px;
+        display: flex;
+        justify-content: space-between;
+        font-size: 10px;
+        text-transform: uppercase;
+      }
+
+      @media (max-width: 900px) {
+        .slide {
+          min-height: 0;
+          aspect-ratio: auto;
+          padding: 40px 28px 70px;
+        }
+
+        .flow,
+        .factors,
+        .formula,
+        .note {
+          grid-template-columns: 1fr;
+        }
+
+        .flow {
+          gap: 18px;
+          margin-top: 42px;
+        }
+
+        .node {
+          min-height: 0;
+        }
+
+        .number {
+          margin-bottom: 14px;
+        }
+
+        .arrow {
+          padding: 0;
+        }
+
+        .arrow::after {
+          content: "↓";
+        }
+
+        .arrow {
+          font-size: 0;
+        }
+
+        .factor {
+          min-height: 0;
+          padding: 20px 0;
+          border-top: 1px solid #000;
+          border-left: 0;
+        }
+
+        footer {
+          right: 28px;
+          left: 28px;
+        }
+      }
+
+      @media print {
+        @page {
+          size: 13.333in 7.5in;
+          margin: 0;
+        }
+
+        .deck {
+          display: block;
+          padding: 0;
+        }
+
+        .slide {
+          width: 13.333in;
+          height: 7.5in;
+          min-height: 0;
+          break-after: page;
+          page-break-after: always;
+          print-color-adjust: exact;
+          -webkit-print-color-adjust: exact;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="deck">
+      <section class="slide">
+        <p class="kicker">01 — Arquitectura</p>
+        <h1>Cómo trabaja Ayni</h1>
+        <p class="subtitle">
+          Un asesor que conversa, elige herramientas y explica resultados verificables.
+        </p>
+
+        <div class="flow">
+          <article class="node">
+            <span class="number">01</span>
+            <h2>Analista</h2>
+            <p>Describe el negocio, el crédito y marca la ubicación.</p>
+          </article>
+          <div class="arrow" aria-hidden="true">→</div>
+          <article class="node">
+            <span class="number">02</span>
+            <h2>Ayni</h2>
+            <p>Interpreta la consulta y decide qué información necesita.</p>
+          </article>
+          <div class="arrow" aria-hidden="true">→</div>
+          <article class="node">
+            <span class="number">03</span>
+            <h2>Herramientas</h2>
+            <p>Actualiza datos, consulta el IRG, simula cuotas y compara plazos.</p>
+          </article>
+          <div class="arrow" aria-hidden="true">→</div>
+          <article class="node">
+            <span class="number">04</span>
+            <h2>Recomendación</h2>
+            <p>Resume el riesgo, la fortaleza y el siguiente paso.</p>
+          </article>
+        </div>
+
+        <div class="statement">Ayni decide qué consultar · El motor calcula</div>
+
+        <footer>
+          <span>GeoSpot Risk</span>
+          <span>Agente + herramientas deterministas</span>
+        </footer>
+      </section>
+
+      <section class="slide">
+        <p class="kicker">02 — Score territorial</p>
+        <h1>Qué forma el IRG</h1>
+        <p class="subtitle">Cinco variables explican el riesgo territorial de la ubicación.</p>
+
+        <div class="formula">
+          <strong>
+            Score = 30% Demanda + 20% Tráfico + 15% NSE + 15% Sinergia + 20% Vacío competitivo
+          </strong>
+          <span>IRG = 100 − Score</span>
+        </div>
+
+        <div class="factors">
+          <article class="factor">
+            <span class="weight">30%</span>
+            <h2>Demanda</h2>
+            <p>Densidad de población del área.</p>
+          </article>
+          <article class="factor">
+            <span class="weight">20%</span>
+            <h2>Tráfico</h2>
+            <p>Flujo peatonal promedio.</p>
+          </article>
+          <article class="factor">
+            <span class="weight">15%</span>
+            <h2>NSE</h2>
+            <p>Poder adquisitivo ponderado.</p>
+          </article>
+          <article class="factor">
+            <span class="weight">15%</span>
+            <h2>Sinergia</h2>
+            <p>Generadores de tráfico cercanos.</p>
+          </article>
+          <article class="factor">
+            <span class="weight">20%</span>
+            <h2>Vacío competitivo</h2>
+            <p>Menos competidores del rubro = mejor score.</p>
+          </article>
+        </div>
+
+        <aside class="note">
+          <strong>Fuera del IRG</strong>
+          <p>
+            Monto, plazo, ventas, capital y experiencia se usan para evaluar capacidad de pago, pero
+            no cambian el score territorial.
+          </p>
+        </aside>
+
+        <footer>
+          <span>GeoSpot Risk</span>
+          <span>A mayor IRG, mayor riesgo</span>
+        </footer>
+      </section>
+    </main>
+  </body>
+</html>

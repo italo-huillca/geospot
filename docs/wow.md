@@ -21,3 +21,5 @@ Que escriba en pantalla: > Ejecutando NLP para detectar rubro... [Cafetería det
 Por qué gana: Demuestra que no están usando un simple ChatGPT que da consejos, sino un Agente Orquestador. Muestra la complejidad del pipeline en milisegundos.
 
 Cómo se hace rápido: En vez de que la pantalla se quede cargando con un spinner genérico, usa un estado de React que cicle por un array de strings (mensajes técnicos) simulando los pasos del algoritmo cada 500ms antes de mostrar el resultado final.
+
+

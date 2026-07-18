@@ -1,12 +1,10 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { evaluarAgentes } from '@/lib/geo/agentes';
+import { evaluarIndicadores } from '@/lib/geo/evaluadores';
 import { useAppStore } from '@/store/useAppStore';
 import { useGeoStore } from '@/store/useGeoStore';
 import { toast } from '@/store/useToastStore';
-
-const PLAZA: [number, number] = [-71.537, -16.3989]; // origen por defecto si el chat llega antes que un clic
 
 // Orquesta el análisis: isócrona vía proxy (con fallback en el worker) + Turf en Web Worker.
 export function useAnalysis() {
@@ -26,12 +24,14 @@ export function useAnalysis() {
         store.pushPipeline(e.data.paso);
       }
       if (e.data.type === 'result' && e.data.id === runIdRef.current) {
-        // el orquestador reporta el veredicto de cada agente en la consola
+        // El motor reporta cada regla; el asesor IA las consultará como herramientas.
         if (e.data.result.stats) {
-          const agentes = evaluarAgentes(e.data.result.stats, store.searchParams);
-          store.pushPipeline(`Orquestando ${agentes.length} agentes de evaluación...`);
-          for (const a of agentes)
-            store.pushPipeline(`Agente ${a.nombre} → ${a.veredicto.toUpperCase()} · ${a.resumen}`);
+          const indicadores = evaluarIndicadores(e.data.result.stats, store.searchParams);
+          store.pushPipeline(`Ejecutando ${indicadores.length} evaluadores auditables...`);
+          for (const indicador of indicadores)
+            store.pushPipeline(
+              `${indicador.nombre} → ${indicador.veredicto.toUpperCase()} · ${indicador.resumen}`,
+            );
         }
         store.setAnalysis(e.data.result);
         store.setStatus('done');
@@ -45,8 +45,8 @@ export function useAnalysis() {
   }, [loaded, manzanas, negocios, locales, distritos]);
 
   useEffect(() => {
-    if (!loaded) return;
-    // Un clic solo no basta (Doc 03): recién se analiza con rubro + monto declarados
+    if (!loaded || !selectedPoint) return;
+    // La ubicación, el rubro y el monto son necesarios antes de ejecutar el motor.
     const hayIntencion = Boolean(searchParams.rubro && searchParams.montoSoles);
     if (!hayIntencion) return;
 
@@ -60,7 +60,7 @@ export function useAnalysis() {
     lastKeyRef.current = key;
 
     const id = ++runIdRef.current;
-    const point = selectedPoint ?? PLAZA;
+    const point = selectedPoint;
     const store = useAppStore.getState();
     store.setStatus('analyzing');
     store.clearPipeline();

@@ -52,8 +52,8 @@ export interface SearchParams {
   capitalSoles: number | null; // capital propio declarado
 }
 
-// Veredicto de un agente del sistema de evaluación
-export interface AgenteResultado {
+// Señal producida por un evaluador determinista y auditable.
+export interface EvaluadorResultado {
   nombre: string;
   veredicto: 'ok' | 'alerta' | 'critico';
   resumen: string;
@@ -81,4 +81,29 @@ export interface AnalysisResult {
   voronoi: FeatureCollection<Polygon | MultiPolygon> | null; // celdas recortadas al área (capa visual)
   score: number | null; // Score de Viabilidad 0-100
   stats: AreaStats | null;
+}
+
+export interface AdvisorContext {
+  searchParams: SearchParams;
+  selectedPoint: [number, number] | null;
+  score: number | null;
+  stats: AreaStats | null;
+  usedIsochroneFallback: boolean;
+}
+
+export interface AdvisorMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export interface AdvisorToolEvent {
+  nombre: 'actualizar_solicitud' | 'consultar_evaluacion' | 'simular_credito' | 'comparar_escenarios';
+  etiqueta: string;
+  estado: 'ok' | 'error';
+}
+
+export interface AdvisorReply {
+  message: string;
+  updates: Partial<SearchParams>;
+  tools: AdvisorToolEvent[];
 }

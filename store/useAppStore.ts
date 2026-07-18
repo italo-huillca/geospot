@@ -43,8 +43,28 @@ export const useAppStore = create<AppState>()(
       pipelineLog: [],
       pushPipeline: (paso) => set((s) => ({ pipelineLog: [...s.pipelineLog, paso] })),
       clearPipeline: () => set({ pipelineLog: [] }),
-      setSelectedPoint: (selectedPoint) => set({ selectedPoint }),
-      setSearchParams: (p) => set((s) => ({ searchParams: { ...s.searchParams, ...p } })),
+      setSelectedPoint: (selectedPoint) =>
+        set((s) =>
+          selectedPoint?.[0] === s.selectedPoint?.[0] && selectedPoint?.[1] === s.selectedPoint?.[1]
+            ? s
+            : { selectedPoint, analysis: null, status: 'idle', pipelineLog: [] },
+        ),
+      setSearchParams: (p) =>
+        set((s) => {
+          const searchParams = { ...s.searchParams, ...p };
+          const changed = (Object.keys(p) as Array<keyof SearchParams>).some(
+            (key) => searchParams[key] !== s.searchParams[key],
+          );
+          return changed
+            ? {
+                searchParams,
+                // Nunca mostrar un dictamen calculado con datos anteriores.
+                analysis: null,
+                status: 'idle',
+                pipelineLog: [],
+              }
+            : s;
+        }),
       setStatus: (status) => set({ status }),
       setAnalysis: (analysis) => set({ analysis }),
       reset: () =>

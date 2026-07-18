@@ -15,18 +15,19 @@ export default function SidePanel() {
   const selectedPoint = useAppStore((s) => s.selectedPoint);
   // Bottom Sheet móvil: tocar la cabecera lo colapsa/expande (en desktop no aplica)
   const [expandido, setExpandido] = useState(true);
-  // borrador local: el análisis se dispara recién al pulsar "Evaluar"
-  const [rubro, setRubro] = useState('');
-  const [monto, setMonto] = useState('');
-  const [experiencia, setExperiencia] = useState('');
-  const [capital, setCapital] = useState('');
-  const [plazo, setPlazo] = useState('');
-  const [ventas, setVentas] = useState('');
-  const [destino, setDestino] = useState('');
+  const [vista, setVista] = useState<'solicitud' | 'asesor'>('solicitud');
   const mounted = useMounted();
 
-  const evaluar = (e: React.FormEvent) => {
+  const evaluar = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const form = new FormData(e.currentTarget);
+    const rubro = String(form.get('rubro') ?? '');
+    const monto = String(form.get('monto') ?? '');
+    const experiencia = String(form.get('experiencia') ?? '');
+    const capital = String(form.get('capital') ?? '');
+    const plazo = String(form.get('plazo') ?? '');
+    const ventas = String(form.get('ventas') ?? '');
+    const destino = String(form.get('destino') ?? '');
     if (!selectedPoint) {
       toast('warning', 'Marca la ubicación del negocio con un clic en el mapa.');
       return;
@@ -44,12 +45,13 @@ export default function SidePanel() {
       experiencia: (experiencia || null) as 'nueva' | 'media' | 'alta' | null,
       capitalSoles: capital ? Number(capital) : null,
     });
+    setVista('asesor');
   };
 
   return (
     <aside
-      className={`panel absolute inset-x-0 bottom-0 z-10 flex flex-col overflow-hidden rounded-t-sm transition-[max-height] duration-300 md:inset-x-auto md:bottom-4 md:left-4 md:top-4 md:!max-h-none md:w-96 md:rounded-sm ${
-        expandido ? 'max-h-[55dvh]' : 'max-h-12'
+      className={`panel absolute inset-x-0 bottom-0 z-10 flex flex-col overflow-hidden rounded-t-sm transition-[max-height] duration-300 md:inset-x-auto md:bottom-auto md:left-4 md:top-4 md:h-[calc(100dvh-2rem)] md:max-h-[calc(100dvh-2rem)] md:min-h-80 md:w-96 md:min-w-80 md:max-w-[calc(100vw-2rem)] md:resize md:rounded-sm ${
+        expandido ? 'max-h-[82dvh]' : 'max-h-12'
       }`}
     >
       <header
@@ -70,15 +72,52 @@ export default function SidePanel() {
         </svg>
       </header>
 
+      <nav
+        role="tablist"
+        aria-label="Flujo de evaluación"
+        className="grid grid-cols-2 border-b border-secondary/30 p-1.5"
+      >
+        <button
+          type="button"
+          role="tab"
+          aria-selected={vista === 'solicitud'}
+          onClick={() => setVista('solicitud')}
+          className={`px-3 py-2 text-xs font-semibold transition-colors ${
+            vista === 'solicitud' ? 'bg-primary/10 text-primary' : 'text-secondary hover:text-foreground'
+          }`}
+        >
+          01 · Solicitud
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={vista === 'asesor'}
+          onClick={() => setVista('asesor')}
+          className={`px-3 py-2 text-xs font-semibold transition-colors ${
+            vista === 'asesor' ? 'bg-primary/10 text-primary' : 'text-secondary hover:text-foreground'
+          }`}
+        >
+          02 · Asesor IA
+        </button>
+      </nav>
+
       {mounted && (
-        <form onSubmit={evaluar} className="space-y-2 border-b border-secondary/30 p-4 text-sm">
+        <form
+          key={JSON.stringify(searchParams)}
+          onSubmit={evaluar}
+          role="tabpanel"
+          aria-hidden={vista !== 'solicitud'}
+          className={`min-h-0 flex-1 space-y-2 overflow-y-auto p-4 text-sm ${
+            vista === 'solicitud' ? 'block' : 'hidden'
+          }`}
+        >
           <h3 className="eyebrow">Nueva evaluación de solicitud</h3>
           <div className="grid grid-cols-2 gap-2">
             <Campo label="Rubro del negocio">
               <select
                 aria-label="Rubro del negocio"
-                value={rubro}
-                onChange={(e) => setRubro(e.target.value)}
+                name="rubro"
+                defaultValue={searchParams.rubro ?? ''}
                 className="w-full rounded-sm border border-secondary/30 bg-black/30 px-2 py-2 focus:border-primary focus:outline-none"
               >
                 <option value="">Seleccionar…</option>
@@ -93,18 +132,18 @@ export default function SidePanel() {
               <input
                 type="number"
                 aria-label="Monto solicitado en soles"
+                name="monto"
                 min={0}
                 placeholder="Monto (S/)"
-                value={monto}
-                onChange={(e) => setMonto(e.target.value)}
+                defaultValue={searchParams.montoSoles ?? ''}
                 className="w-full rounded-sm border border-secondary/30 bg-black/30 px-2 py-2 focus:border-primary focus:outline-none placeholder:text-secondary"
               />
             </Campo>
             <Campo label="Experiencia en el rubro">
               <select
                 aria-label="Experiencia en el rubro"
-                value={experiencia}
-                onChange={(e) => setExperiencia(e.target.value)}
+                name="experiencia"
+                defaultValue={searchParams.experiencia ?? ''}
                 className="w-full rounded-sm border border-secondary/30 bg-black/30 px-2 py-2 focus:border-primary focus:outline-none"
               >
                 <option value="">Seleccionar…</option>
@@ -117,10 +156,10 @@ export default function SidePanel() {
               <input
                 type="number"
                 aria-label="Capital propio en soles"
+                name="capital"
                 min={0}
                 placeholder="Capital propio (S/)"
-                value={capital}
-                onChange={(e) => setCapital(e.target.value)}
+                defaultValue={searchParams.capitalSoles ?? ''}
                 className="w-full rounded-sm border border-secondary/30 bg-black/30 px-2 py-2 focus:border-primary focus:outline-none placeholder:text-secondary"
               />
             </Campo>
@@ -128,10 +167,10 @@ export default function SidePanel() {
               <input
                 type="number"
                 aria-label="Plazo en meses"
+                name="plazo"
                 min={1}
                 placeholder="Plazo (meses)"
-                value={plazo}
-                onChange={(e) => setPlazo(e.target.value)}
+                defaultValue={searchParams.plazoMeses ?? ''}
                 className="w-full rounded-sm border border-secondary/30 bg-black/30 px-2 py-2 focus:border-primary focus:outline-none placeholder:text-secondary"
               />
             </Campo>
@@ -139,18 +178,18 @@ export default function SidePanel() {
               <input
                 type="number"
                 aria-label="Ventas mensuales en soles"
+                name="ventas"
                 min={0}
                 placeholder="Ventas mensuales (S/)"
-                value={ventas}
-                onChange={(e) => setVentas(e.target.value)}
+                defaultValue={searchParams.ventasMensuales ?? ''}
                 className="w-full rounded-sm border border-secondary/30 bg-black/30 px-2 py-2 focus:border-primary focus:outline-none placeholder:text-secondary"
               />
             </Campo>
             <Campo label="Destino del crédito" className="col-span-2">
               <select
                 aria-label="Destino del crédito"
-                value={destino}
-                onChange={(e) => setDestino(e.target.value)}
+                name="destino"
+                defaultValue={searchParams.destino ?? ''}
                 className="w-full rounded-sm border border-secondary/30 bg-black/30 px-2 py-2 focus:border-primary focus:outline-none"
               >
                 <option value="">Seleccionar…</option>
@@ -171,17 +210,17 @@ export default function SidePanel() {
         </form>
       )}
 
-      <TerminalIA />
-
-      <details className="flex min-h-0 flex-col border-b border-secondary/30 open:flex-1">
-        <summary className="cursor-pointer p-3 text-sm font-medium text-secondary">
-          Copiloto IA (describir la solicitud en texto)
-        </summary>
+      <div
+        role="tabpanel"
+        aria-hidden={vista !== 'asesor'}
+        className={`min-h-0 flex-1 flex-col ${vista === 'asesor' ? 'flex' : 'hidden'}`}
+      >
+        <TerminalIA />
         <ChatPanel />
-      </details>
+      </div>
 
       {searchParams.rubro || searchParams.montoSoles ? (
-        <p className="p-3 text-xs text-secondary">
+        <p className="border-t border-secondary/20 px-3 py-2 text-xs text-secondary">
           Evaluando: {searchParams.rubro ?? 'sin rubro'}
           {searchParams.montoSoles ? ` · S/ ${searchParams.montoSoles.toLocaleString('es-PE')}` : ''}
         </p>

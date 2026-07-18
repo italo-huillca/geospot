@@ -27,7 +27,12 @@ const GEOAPIFY_KEY = process.env.NEXT_PUBLIC_GEOAPIFY_API_KEY;
 const MAP_STYLE = `https://maps.geoapify.com/v1/styles/dark-matter/style.json?apiKey=${GEOAPIFY_KEY}`;
 
 // Plaza de Armas de Arequipa
-const AREQUIPA = { longitude: -71.537, latitude: -16.3989, zoom: 14 };
+const AREQUIPA_CENTER: [number, number] = [-71.537, -16.3989];
+const AREQUIPA = {
+  longitude: AREQUIPA_CENTER[0],
+  latitude: AREQUIPA_CENTER[1],
+  zoom: 14,
+};
 // Perímetro del MVP (Doc 03): clics fuera disparan el Toast rojo
 const LIMITES = { minLng: -71.65, maxLng: -71.42, minLat: -16.53, maxLat: -16.29 };
 
@@ -41,6 +46,24 @@ const tintarMapa = (map: MLMap) => {
         map.setPaintProperty(layer.id, 'fill-color', '#245660');
       else if (layer.type === 'fill' && layer.id.includes('building'))
         map.setPaintProperty(layer.id, 'fill-color', '#2b3f49');
+
+      // Las etiquetas viales de Geoapify varían de nombre entre estilos.
+      // Reforzamos cualquier capa de texto asociada a calles o transporte.
+      const sourceLayer = 'source-layer' in layer ? String(layer['source-layer']) : '';
+      const esEtiquetaVial =
+        layer.type === 'symbol' &&
+        Boolean(layer.layout?.['text-field']) &&
+        /(road|street|highway|transportation|calle|avenue)/i.test(`${layer.id} ${sourceLayer}`);
+
+      if (esEtiquetaVial) {
+        map.setLayoutProperty(layer.id, 'visibility', 'visible');
+        map.setLayerZoomRange(layer.id, Math.min(layer.minzoom ?? 13, 13), layer.maxzoom ?? 24);
+        map.setPaintProperty(layer.id, 'text-color', '#e6f2ee');
+        map.setPaintProperty(layer.id, 'text-opacity', 1);
+        map.setPaintProperty(layer.id, 'text-halo-color', '#10231f');
+        map.setPaintProperty(layer.id, 'text-halo-width', 1.5);
+        map.setPaintProperty(layer.id, 'text-halo-blur', 0.5);
+      }
     } catch {
       /* estilos de Geoapify pueden variar; el tinte es cosmético */
     }
@@ -57,7 +80,8 @@ export default function MapView() {
   // Gemelo digital 3D: feature opcional, apagada por defecto (no altera el flujo 2D)
   const [modo3D, setModo3D] = useState(false);
   const mapRef = useRef<MapRef>(null);
-  useAnalysis();
+  const previewAnalysis = useAnalysis(AREQUIPA_CENTER);
+  const visualAnalysis = analysis ?? previewAnalysis;
 
   const toggle3D = () => {
     const activar = !modo3D;
@@ -98,6 +122,7 @@ export default function MapView() {
         mapStyle={MAP_STYLE}
         onClick={onClick}
         onLoad={(e) => tintarMapa(e.target)}
+        cursor={selectedPoint ? 'grab' : 'crosshair'}
         interactiveLayerIds={['negocios-circles', 'locales-circles']}
         style={{ width: '100%', height: '100%' }}
       >
@@ -126,8 +151,8 @@ export default function MapView() {
             />
           </Source>
         )}
-        {analysis?.isochrone && (
-          <Source id="isochrone" type="geojson" data={analysis.isochrone}>
+        {visualAnalysis?.isochrone && (
+          <Source id="isochrone" type="geojson" data={visualAnalysis.isochrone}>
             {/* Área de influencia: 10 min a pie (o buffer de 600 m) */}
             <Layer
               id="isochrone-fill"
@@ -141,8 +166,8 @@ export default function MapView() {
             />
           </Source>
         )}
-        {analysis?.voronoi && (
-          <Source id="voronoi" type="geojson" data={analysis.voronoi}>
+        {visualAnalysis?.voronoi && (
+          <Source id="voronoi" type="geojson" data={visualAnalysis.voronoi}>
             {/* Celdas de Voronoi: la geometría del motor, expuesta */}
             <Layer
               id="voronoi-lines"
@@ -151,17 +176,21 @@ export default function MapView() {
             />
           </Source>
         )}
-        {/* Sin rubro seleccionado el mapa queda limpio: los puntos aparecen según los filtros */}
+        {/* Al entrar se muestran solo las cafeterías; las anclas aparecen durante el análisis. */}
         {negocios && searchParams.rubro && (
           <Source id="negocios" type="geojson" data={negocios}>
             <Layer
               id="negocios-circles"
               type="circle"
-              filter={[
-                'any',
-                ['==', ['get', 'subcategoria'], searchParams.rubro],
-                ['==', ['get', 'generador_trafico'], true],
-              ]}
+              filter={
+                analysis
+                  ? [
+                      'any',
+                      ['==', ['get', 'subcategoria'], searchParams.rubro],
+                      ['==', ['get', 'generador_trafico'], true],
+                    ]
+                  : ['==', ['get', 'subcategoria'], searchParams.rubro]
+              }
               paint={{
                 // Competencia: naranja con borde blanco (protagonista del Voronoi).
                 // Generadores de tráfico: mismos tonos, atenuados y sin borde.
@@ -190,7 +219,7 @@ export default function MapView() {
             />
           </Source>
         )}
-        {selectedPoint && (
+        {selectedPoint ? (
           <Marker longitude={selectedPoint[0]} latitude={selectedPoint[1]} anchor="bottom">
             {/* Pin rojo clásico para el punto de análisis */}
             <svg width="30" height="40" viewBox="0 0 24 32" aria-hidden>
@@ -203,9 +232,26 @@ export default function MapView() {
               <circle cx="12" cy="12" r="4.5" fill="#ffffff" />
             </svg>
           </Marker>
+        ) : (
+          <Marker longitude={AREQUIPA_CENTER[0]} latitude={AREQUIPA_CENTER[1]} anchor="bottom">
+            <div className="flex flex-col items-center">
+              <span className="mb-1 whitespace-nowrap rounded-sm border border-primary/40 bg-background/90 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary">
+                Ejemplo · Cafetería
+              </span>
+              <svg width="30" height="40" viewBox="0 0 24 32" aria-hidden>
+                <path
+                  d="M12 0C5.4 0 0 5.4 0 12c0 9 12 20 12 20s12-11 12-20C24 5.4 18.6 0 12 0z"
+                  fill={TEAL}
+                  stroke="#075e54"
+                  strokeWidth="1"
+                />
+                <circle cx="12" cy="12" r="4.5" fill="#0a1310" />
+              </svg>
+            </div>
+          </Marker>
         )}
-        {analysis?.optimalPoint && (
-          <Marker longitude={analysis.optimalPoint[0]} latitude={analysis.optimalPoint[1]}>
+        {visualAnalysis?.optimalPoint && (
+          <Marker longitude={visualAnalysis.optimalPoint[0]} latitude={visualAnalysis.optimalPoint[1]}>
             {/* Mayor vacío de competencia (Voronoi): mitigante territorial */}
             <div className="flex flex-col items-center" title="Zona de menor competencia">
               <div className="h-5 w-5 rounded-full border-2 border-background bg-success ring-4 ring-success/30" />

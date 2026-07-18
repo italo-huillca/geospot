@@ -16,5 +16,11 @@ self.onmessage = (e: MessageEvent) => {
       onStep: (paso) => self.postMessage({ type: 'step', id: msg.id, paso }),
     });
     self.postMessage({ type: 'result', id: msg.id, result });
+    return;
+  }
+  if (msg.type === 'preview' && data) {
+    // Vista previa territorial: no altera la solicitud ni activa al asesor IA.
+    const result = analyzeArea(msg.point, msg.params, null, data);
+    self.postMessage({ type: 'preview-result', id: msg.id, result });
   }
 };

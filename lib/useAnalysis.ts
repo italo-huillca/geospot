@@ -1,24 +1,40 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { evaluarIndicadores } from '@/lib/geo/evaluadores';
+import type { AnalysisResult } from '@/lib/types';
 import { useAppStore } from '@/store/useAppStore';
 import { useGeoStore } from '@/store/useGeoStore';
 import { toast } from '@/store/useToastStore';
 
 // Orquesta el análisis: isócrona vía proxy (con fallback en el worker) + Turf en Web Worker.
-export function useAnalysis() {
+export function useAnalysis(demoPoint: [number, number]) {
   const workerRef = useRef<Worker | null>(null);
   const runIdRef = useRef(0);
+  const previewRunIdRef = useRef(0);
+  const previewKeyRef = useRef<string | null>(null);
   const lastKeyRef = useRef<string | null>(null);
+  const [previewState, setPreviewState] = useState<{
+    key: string;
+    result: AnalysisResult;
+  } | null>(null);
   const { manzanas, negocios, locales, distritos, loaded } = useGeoStore();
   const selectedPoint = useAppStore((s) => s.selectedPoint);
   const searchParams = useAppStore((s) => s.searchParams);
+  const previewPoint = selectedPoint ?? demoPoint;
+  const previewKey = searchParams.rubro
+    ? JSON.stringify([previewPoint, searchParams])
+    : null;
 
   useEffect(() => {
     const w = new Worker(new URL('../workers/analysis.worker.ts', import.meta.url));
     workerRef.current = w;
     w.onmessage = (e) => {
+      if (e.data.type === 'preview-result' && e.data.id === previewRunIdRef.current) {
+        if (previewKeyRef.current)
+          setPreviewState({ key: previewKeyRef.current, result: e.data.result });
+        return;
+      }
       const store = useAppStore.getState();
       if (e.data.type === 'step' && e.data.id === runIdRef.current) {
         store.pushPipeline(e.data.paso);
@@ -35,6 +51,7 @@ export function useAnalysis() {
         }
         store.setAnalysis(e.data.result);
         store.setStatus('done');
+        setPreviewState(null);
       }
     };
     return () => w.terminate();
@@ -43,6 +60,22 @@ export function useAnalysis() {
   useEffect(() => {
     if (loaded) workerRef.current?.postMessage({ type: 'init', manzanas, negocios, locales, distritos });
   }, [loaded, manzanas, negocios, locales, distritos]);
+
+  useEffect(() => {
+    if (!loaded || !previewKey) {
+      previewKeyRef.current = null;
+      return;
+    }
+
+    const id = ++previewRunIdRef.current;
+    previewKeyRef.current = previewKey;
+    workerRef.current?.postMessage({
+      type: 'preview',
+      id,
+      point: previewPoint,
+      params: searchParams,
+    });
+  }, [loaded, previewKey, previewPoint, searchParams]);
 
   useEffect(() => {
     if (!loaded || !selectedPoint) return;
@@ -80,4 +113,6 @@ export function useAnalysis() {
       workerRef.current?.postMessage({ type: 'analyze', id, point, params: searchParams, isochrone });
     })();
   }, [loaded, selectedPoint, searchParams]);
+
+  return previewState?.key === previewKey ? previewState.result : null;
 }

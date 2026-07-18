@@ -202,7 +202,7 @@ export default function SidePanel() {
           <p className={`text-xs ${selectedPoint ? 'text-success' : 'text-secondary'}`}>
             {selectedPoint
               ? 'Ubicación del negocio marcada en el mapa.'
-              : 'Haz clic en el mapa para marcar la ubicación del negocio.'}
+              : 'Marca en el mapa la ubicación del negocio.'}
           </p>
           <button type="submit" className="btn-primary w-full py-2">
             Evaluar riesgo territorial

@@ -24,7 +24,8 @@ interface AppState {
 }
 
 const initialSearchParams: SearchParams = {
-  rubro: null,
+  // Primera exploración: mostrar cafeterías de Arequipa sin ejecutar un análisis.
+  rubro: 'cafeteria',
   montoSoles: null,
   plazoMeses: null,
   ventasMensuales: null,
@@ -78,7 +79,7 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'geospot-exploracion',
-      version: 4, // nuevos campos de solicitud (plazo/ventas/destino); descarta estados previos
+      version: 5, // inicia la exploración con cafeterías visibles
       migrate: () => ({ selectedPoint: null, searchParams: initialSearchParams, analysis: null }),
       storage: createJSONStorage(() => sessionStorage),
       // status es efímero: tras un F5 vuelve a 'idle'

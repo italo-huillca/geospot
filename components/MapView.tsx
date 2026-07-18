@@ -236,7 +236,7 @@ export default function MapView() {
           <Marker longitude={AREQUIPA_CENTER[0]} latitude={AREQUIPA_CENTER[1]} anchor="bottom">
             <div className="flex flex-col items-center">
               <span className="mb-1 whitespace-nowrap rounded-sm border border-primary/40 bg-background/90 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary">
-                Ejemplo · Cafetería
+               
               </span>
               <svg width="30" height="40" viewBox="0 0 24 32" aria-hidden>
                 <path

@@ -1,13 +1,16 @@
 'use client';
 
+import { driver, type Driver } from 'driver.js';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import ChatPanel from '@/components/ChatPanel';
 import TerminalIA from '@/components/TerminalIA';
 import { RUBROS } from '@/lib/parseIntent';
 import { useMounted } from '@/lib/useMounted';
 import { useAppStore } from '@/store/useAppStore';
 import { toast } from '@/store/useToastStore';
+
+const GUIA_FORMULARIO_KEY = 'geospot:guia-formulario-v1';
 
 export default function SidePanel() {
   const searchParams = useAppStore((s) => s.searchParams);
@@ -17,6 +20,124 @@ export default function SidePanel() {
   const [expandido, setExpandido] = useState(true);
   const [vista, setVista] = useState<'solicitud' | 'asesor'>('solicitud');
   const mounted = useMounted();
+  const guiaRef = useRef<Driver | null>(null);
+
+  const iniciarGuia = useCallback(() => {
+    setExpandido(true);
+    setVista('solicitud');
+
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        guiaRef.current?.destroy();
+
+        const guia = driver({
+          animate: true,
+          allowClose: true,
+          smoothScroll: true,
+          showProgress: true,
+          overlayColor: '#020807',
+          overlayOpacity: 0.76,
+          stagePadding: 6,
+          stageRadius: 3,
+          popoverClass: 'geospot-tour',
+          progressText: '{{current}} de {{total}}',
+          nextBtnText: 'Siguiente',
+          prevBtnText: 'Atrás',
+          doneBtnText: 'Entendido',
+          onDestroyed: () => {
+            if (guiaRef.current === guia) guiaRef.current = null;
+            try {
+              window.localStorage.setItem(GUIA_FORMULARIO_KEY, '1');
+            } catch {
+              // La guía sigue funcionando si el navegador bloquea localStorage.
+            }
+          },
+          steps: [
+            {
+              popover: {
+                title: 'Evalúa una solicitud',
+                description:
+                  'Completa el perfil del negocio y marca su ubicación para calcular el riesgo territorial.',
+              },
+            },
+            {
+              element: '[data-tour="datos-clave"]',
+              popover: {
+                title: 'Datos esenciales',
+                description:
+                  'Selecciona el rubro e ingresa el monto solicitado. Ambos datos son necesarios para evaluar.',
+                side: 'right',
+                align: 'start',
+              },
+            },
+            {
+              element: '[data-tour="perfil-financiero"]',
+              popover: {
+                title: 'Perfil financiero',
+                description:
+                  'La experiencia, el capital, el plazo y las ventas afinan el análisis de capacidad.',
+                side: 'right',
+                align: 'start',
+              },
+            },
+            {
+              element: '[data-tour="destino-credito"]',
+              popover: {
+                title: 'Destino del crédito',
+                description:
+                  'Indica para qué se usará el financiamiento; este dato ayuda a interpretar el nivel de riesgo.',
+                side: 'right',
+                align: 'start',
+              },
+            },
+            {
+              element: '[data-tour="ubicacion-negocio"]',
+              popover: {
+                title: 'Ubica el negocio',
+                description:
+                  'Haz clic en el mapa para marcar el punto exacto antes de ejecutar la evaluación.',
+                side: 'right',
+                align: 'center',
+              },
+            },
+            {
+              element: '[data-tour="evaluar-riesgo"]',
+              popover: {
+                title: 'Ejecuta el análisis',
+                description:
+                  'GeoSpot combinará la solicitud con los datos territoriales de la zona seleccionada.',
+                side: 'right',
+                align: 'end',
+              },
+            },
+          ],
+        });
+
+        guiaRef.current = guia;
+        guia.drive();
+      });
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+
+    try {
+      if (window.localStorage.getItem(GUIA_FORMULARIO_KEY)) return;
+    } catch {
+      return;
+    }
+
+    const timeout = window.setTimeout(iniciarGuia, 700);
+    return () => window.clearTimeout(timeout);
+  }, [iniciarGuia, mounted]);
+
+  useEffect(
+    () => () => {
+      guiaRef.current?.destroy();
+    },
+    [],
+  );
 
   const evaluar = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -111,8 +232,24 @@ export default function SidePanel() {
             vista === 'solicitud' ? 'block' : 'hidden'
           }`}
         >
-          <h3 className="eyebrow">Nueva evaluación de solicitud</h3>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="eyebrow">Nueva evaluación de solicitud</h3>
+            <button
+              type="button"
+              onClick={iniciarGuia}
+              className="flex items-center gap-1 text-[11px] font-semibold text-secondary transition-colors hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              aria-label="Ver guía del formulario"
+            >
+              <span
+                aria-hidden
+                className="grid h-4 w-4 place-items-center rounded-full border border-current font-mono text-[10px]"
+              >
+                ?
+              </span>
+              Guía
+            </button>
+          </div>
+          <div data-tour="datos-clave" className="grid grid-cols-2 gap-2">
             <Campo label="Rubro del negocio">
               <select
                 aria-label="Rubro del negocio"
@@ -139,6 +276,8 @@ export default function SidePanel() {
                 className="w-full rounded-sm border border-secondary/30 bg-black/30 px-2 py-2 focus:border-primary focus:outline-none placeholder:text-secondary"
               />
             </Campo>
+          </div>
+          <div data-tour="perfil-financiero" className="grid grid-cols-2 gap-2">
             <Campo label="Experiencia en el rubro">
               <select
                 aria-label="Experiencia en el rubro"
@@ -185,26 +324,33 @@ export default function SidePanel() {
                 className="w-full rounded-sm border border-secondary/30 bg-black/30 px-2 py-2 focus:border-primary focus:outline-none placeholder:text-secondary"
               />
             </Campo>
-            <Campo label="Destino del crédito" className="col-span-2">
-              <select
-                aria-label="Destino del crédito"
-                name="destino"
-                defaultValue={searchParams.destino ?? ''}
-                className="w-full rounded-sm border border-secondary/30 bg-black/30 px-2 py-2 focus:border-primary focus:outline-none"
-              >
-                <option value="">Seleccionar…</option>
-                <option value="capital_trabajo">Capital de trabajo</option>
-                <option value="activo_fijo">Activo fijo</option>
-                <option value="apertura">Apertura de negocio</option>
-              </select>
-            </Campo>
           </div>
-          <p className={`text-xs ${selectedPoint ? 'text-success' : 'text-secondary'}`}>
+          <Campo label="Destino del crédito" dataTour="destino-credito">
+            <select
+              aria-label="Destino del crédito"
+              name="destino"
+              defaultValue={searchParams.destino ?? ''}
+              className="w-full rounded-sm border border-secondary/30 bg-black/30 px-2 py-2 focus:border-primary focus:outline-none"
+            >
+              <option value="">Seleccionar…</option>
+              <option value="capital_trabajo">Capital de trabajo</option>
+              <option value="activo_fijo">Activo fijo</option>
+              <option value="apertura">Apertura de negocio</option>
+            </select>
+          </Campo>
+          <p
+            data-tour="ubicacion-negocio"
+            className={`text-xs ${selectedPoint ? 'text-success' : 'text-secondary'}`}
+          >
             {selectedPoint
               ? 'Ubicación del negocio marcada en el mapa.'
               : 'Marca en el mapa la ubicación del negocio.'}
           </p>
-          <button type="submit" className="btn-primary w-full py-2">
+          <button
+            type="submit"
+            data-tour="evaluar-riesgo"
+            className="btn-primary w-full py-2"
+          >
             Evaluar riesgo territorial
           </button>
         </form>
@@ -232,14 +378,16 @@ export default function SidePanel() {
 function Campo({
   label,
   className = '',
+  dataTour,
   children,
 }: {
   label: string;
   className?: string;
+  dataTour?: string;
   children: React.ReactNode;
 }) {
   return (
-    <label className={`block text-xs text-secondary ${className}`}>
+    <label data-tour={dataTour} className={`block text-xs text-secondary ${className}`}>
       <span className="mb-1 block">{label}</span>
       {children}
     </label>

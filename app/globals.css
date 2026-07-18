@@ -63,3 +63,80 @@ body {
 }
 .btn-primary:hover { background: transparent; color: var(--color-primary); }
 .btn-primary:disabled { opacity: 0.45; }
+
+/* Recorrido guiado: conserva la estética de instrumento del panel. */
+.geospot-tour.driver-popover {
+  --driver-popover-font-family: var(--font-sans);
+  min-width: 17.5rem;
+  max-width: min(21rem, calc(100vw - 1.5rem));
+  padding: 1rem;
+  color: var(--color-foreground);
+  background: color-mix(in oklab, var(--color-surface) 96%, black);
+  border: 1px solid color-mix(in oklab, var(--color-primary) 28%, var(--color-secondary));
+  border-top: 2px solid var(--color-primary);
+  border-radius: 0.125rem;
+  box-shadow: 0 20px 55px rgb(0 0 0 / 55%);
+}
+
+.geospot-tour .driver-popover-title {
+  padding-right: 1.5rem;
+  color: var(--color-foreground);
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
+
+.geospot-tour .driver-popover-description {
+  color: var(--color-secondary);
+  font-size: 0.8rem;
+  line-height: 1.55;
+}
+
+.geospot-tour .driver-popover-progress-text {
+  color: var(--color-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+}
+
+.geospot-tour .driver-popover-footer-btn {
+  padding: 0.4rem 0.65rem;
+  color: var(--color-foreground);
+  background: transparent;
+  border-color: color-mix(in oklab, var(--color-secondary) 45%, transparent);
+  border-radius: 0.125rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-shadow: none;
+}
+
+.geospot-tour .driver-popover-footer-btn:hover,
+.geospot-tour .driver-popover-footer-btn:focus {
+  color: var(--color-primary);
+  background: color-mix(in oklab, var(--color-primary) 8%, transparent);
+  border-color: var(--color-primary);
+}
+
+.geospot-tour .driver-popover-next-btn {
+  color: var(--color-background);
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.geospot-tour .driver-popover-next-btn:hover,
+.geospot-tour .driver-popover-next-btn:focus {
+  color: var(--color-primary);
+  background: transparent;
+}
+
+.geospot-tour .driver-popover-close-btn {
+  color: var(--color-secondary);
+}
+
+.geospot-tour .driver-popover-close-btn:hover,
+.geospot-tour .driver-popover-close-btn:focus {
+  color: var(--color-primary);
+}
+
+.geospot-tour .driver-popover-arrow-side-left { border-left-color: #101a17; }
+.geospot-tour .driver-popover-arrow-side-right { border-right-color: #101a17; }
+.geospot-tour .driver-popover-arrow-side-top { border-top-color: #101a17; }
+.geospot-tour .driver-popover-arrow-side-bottom { border-bottom-color: #101a17; }

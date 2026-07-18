@@ -59,12 +59,34 @@ Todos los archivos seguirán el formato RFC 7946 GeoJSON. La validación y el ti
 * `telefono_contacto` (string): Número para el botón de "Contactar por WhatsApp".
 * `imagen_url` (string): URL de la fotografía principal del local.
 
+### **4. Archivo: `distritos.geojson` (Flujo Peatonal Metropolitano)**
+
+*Geometría esperada: `Point` (centro del distrito).*
+*Uso principal: contexto en el informe y fallback de tráfico peatonal fuera de la cobertura censal del Cercado.*
+
+**Estructura de `properties`:**
+
+* `nombre` (string): Nombre del distrito.
+* `clase` (string): "Alto" | "Moderado" | "Bajo" | "Muy Bajo".
+* `flujo_score` (number): Índice 0-100 normalizado del composite OSM (Comercial 25% + Peatonal 25% + Turismo 20% + Edificios 15% + Servicios 10% + Recreación 5%).
+
+### **5. Entrada de usuario: CSV de Cartera (B2B, no es archivo del repo)**
+
+*Pegado por el usuario en la pestaña "Cartera · riesgos". Separador `,` o `;`, cabecera opcional.*
+
+**Columnas (alias aceptados):**
+
+* `id` (`codigo`, `credito`): identificador del crédito.
+* `lat` (`latitud`) / `lng` (`lon`, `longitud`): coordenadas del negocio (deben caer en Arequipa).
+* `rubro` (`giro`, `actividad`): opcional, uno de los rubros canónicos.
+* `saldo` (`monto`, `capital`): saldo vigente en soles (> 0).
+
 ---
 
 ### **Gestión de Estado (Frontend / React)**
 
 Dado que el MVP es *stateless* y no hay base de datos, el flujo de lectura y persistencia en memoria se regirá por estas reglas:
 
-* **Carga Inicial:** Al montar `/explore`, los 3 archivos `.geojson` se cargan mediante `fetch` desde `/public/data/` y se almacenan en el estado global de Zustand (`useGeoStore`).
+* **Carga Inicial:** Al montar `/explore`, los 4 archivos `.geojson` se cargan mediante `fetch` desde `/public/data/` y se almacenan en el estado global de Zustand (`useGeoStore`). Se regeneran con `node data/transform.mjs` desde los crudos de `data/raw/`.
 * **Estado del Chat:** El historial de la conversación con DeepSeek se mantendrá en un `useState` local del componente `ChatPanel`.
 * **Persistencia Temporal:** El resultado del último análisis (Polígono de la Isócrona, Punto Óptimo calculado y Score de Viabilidad actual) se guardará en `sessionStorage` codificado como string (`JSON.stringify`). Si el juez presiona F5 o recarga la página desde el móvil, el mapa recuperará este estado instantáneamente sin re-consultar a las APIs.

@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+/* Paleta del Brief UI/UX (Documento 04) */
+@theme {
+  --color-background: #111111;
+  --color-foreground: #f5f5f7;
+  --color-secondary: #a1a1aa;
+  --color-primary: #0c00f8;
+  --color-accent: #d0cff0;
+  --color-success: #00ff88;
+  --color-warning: #ff8800;
+  --color-danger: #ff4444;
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+}

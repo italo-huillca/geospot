@@ -1,0 +1,331 @@
+'use client';
+
+import { AnimatePresence, motion } from 'framer-motion';
+import Image from 'next/image';
+import { useEffect, useRef, useState } from 'react';
+import Map, {
+  Layer,
+  Marker,
+  Source,
+  type MapLayerMouseEvent,
+  type MapRef,
+} from 'react-map-gl/maplibre';
+import type { Map as MLMap } from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
+import Leyenda from '@/components/Leyenda';
+import type { LocalProps, NegocioProps } from '@/lib/types';
+import { useAnalysis } from '@/lib/useAnalysis';
+import { useAppStore } from '@/store/useAppStore';
+import { useGeoStore } from '@/store/useGeoStore';
+import { toast } from '@/store/useToastStore';
+
+type Preview =
+  | { kind: 'negocio'; props: NegocioProps }
+  | { kind: 'local'; props: LocalProps };
+
+const GEOAPIFY_KEY = process.env.NEXT_PUBLIC_GEOAPIFY_API_KEY;
+const MAP_STYLE = `https://maps.geoapify.com/v1/styles/dark-matter/style.json?apiKey=${GEOAPIFY_KEY}`;
+
+// Plaza de Armas de Arequipa
+const AREQUIPA = { longitude: -71.537, latitude: -16.3989, zoom: 14 };
+// Perímetro del MVP (Doc 03): clics fuera disparan el Toast rojo
+const LIMITES = { minLng: -71.65, maxLng: -71.42, minLat: -16.53, maxLat: -16.29 };
+
+// Look & feel "gemelo digital": basemap oscuro con tinte teal
+const TEAL = '#2ee6d6';
+const tintarMapa = (map: MLMap) => {
+  for (const layer of map.getStyle().layers ?? []) {
+    try {
+      if (layer.type === 'background') map.setPaintProperty(layer.id, 'background-color', '#1a2b33');
+      else if (layer.type === 'fill' && layer.id.includes('water'))
+        map.setPaintProperty(layer.id, 'fill-color', '#245660');
+      else if (layer.type === 'fill' && layer.id.includes('building'))
+        map.setPaintProperty(layer.id, 'fill-color', '#2b3f49');
+    } catch {
+      /* estilos de Geoapify pueden variar; el tinte es cosmético */
+    }
+  }
+};
+
+export default function MapView() {
+  const { negocios, locales, manzanas, loaded, loading, error, loadDatasets } = useGeoStore();
+  const selectedPoint = useAppStore((s) => s.selectedPoint);
+  const setSelectedPoint = useAppStore((s) => s.setSelectedPoint);
+  const analysis = useAppStore((s) => s.analysis);
+  const searchParams = useAppStore((s) => s.searchParams);
+  const [preview, setPreview] = useState<Preview | null>(null);
+  // Gemelo digital 3D: feature opcional, apagada por defecto (no altera el flujo 2D)
+  const [modo3D, setModo3D] = useState(false);
+  const mapRef = useRef<MapRef>(null);
+  useAnalysis();
+
+  const toggle3D = () => {
+    const activar = !modo3D;
+    setModo3D(activar);
+    mapRef.current
+      ?.getMap()
+      .easeTo({ pitch: activar ? 55 : 0, bearing: activar ? -15 : 0, duration: 800 });
+  };
+
+  useEffect(() => {
+    loadDatasets();
+  }, [loadDatasets]);
+
+  const onClick = (e: MapLayerMouseEvent) => {
+    const f = e.features?.[0];
+    if (f) {
+      // clic sobre un pin: tarjeta de previsualización, no análisis
+      setPreview({
+        kind: f.layer.id === 'locales-circles' ? 'local' : 'negocio',
+        props: f.properties as never,
+      });
+      return;
+    }
+    setPreview(null);
+    const { lng, lat } = e.lngLat;
+    if (lng < LIMITES.minLng || lng > LIMITES.maxLng || lat < LIMITES.minLat || lat > LIMITES.maxLat) {
+      toast('error', 'El análisis del MVP está limitado a Arequipa. Por favor, selecciona un punto válido.');
+      return;
+    }
+    setSelectedPoint([lng, lat]);
+  };
+
+  return (
+    <div className="relative h-dvh w-full">
+      <Map
+        ref={mapRef}
+        initialViewState={AREQUIPA}
+        mapStyle={MAP_STYLE}
+        onClick={onClick}
+        onLoad={(e) => tintarMapa(e.target)}
+        interactiveLayerIds={['negocios-circles', 'locales-circles']}
+        style={{ width: '100%', height: '100%' }}
+      >
+        {modo3D && manzanas && (
+          <Source id="manzanas-3d" type="geojson" data={manzanas}>
+            {/* Manzanas extruidas: altura = población, color = tráfico peatonal */}
+            <Layer
+              id="manzanas-extrusion"
+              type="fill-extrusion"
+              paint={{
+                'fill-extrusion-height': ['*', ['get', 'poblacion_total'], 2.5],
+                'fill-extrusion-base': 0,
+                'fill-extrusion-opacity': 0.65,
+                'fill-extrusion-color': [
+                  'interpolate',
+                  ['linear'],
+                  ['get', 'trafico_peatonal'],
+                  0,
+                  '#16323a',
+                  40,
+                  '#1f6f6f',
+                  100,
+                  '#2ee6d6',
+                ],
+              }}
+            />
+          </Source>
+        )}
+        {analysis?.isochrone && (
+          <Source id="isochrone" type="geojson" data={analysis.isochrone}>
+            {/* Área de influencia: 10 min a pie (o buffer de 600 m) */}
+            <Layer
+              id="isochrone-fill"
+              type="fill"
+              paint={{ 'fill-color': TEAL, 'fill-opacity': 0.06 }}
+            />
+            <Layer
+              id="isochrone-line"
+              type="line"
+              paint={{ 'line-color': TEAL, 'line-width': 2, 'line-opacity': 0.9 }}
+            />
+          </Source>
+        )}
+        {analysis?.voronoi && (
+          <Source id="voronoi" type="geojson" data={analysis.voronoi}>
+            {/* Celdas de Voronoi: la geometría del motor, expuesta */}
+            <Layer
+              id="voronoi-lines"
+              type="line"
+              paint={{ 'line-color': TEAL, 'line-width': 1, 'line-opacity': 0.55 }}
+            />
+          </Source>
+        )}
+        {/* Sin rubro seleccionado el mapa queda limpio: los puntos aparecen según los filtros */}
+        {negocios && searchParams.rubro && (
+          <Source id="negocios" type="geojson" data={negocios}>
+            <Layer
+              id="negocios-circles"
+              type="circle"
+              filter={[
+                'any',
+                ['==', ['get', 'subcategoria'], searchParams.rubro],
+                ['==', ['get', 'generador_trafico'], true],
+              ]}
+              paint={{
+                // Competencia: naranja con borde blanco (protagonista del Voronoi).
+                // Generadores de tráfico: mismos tonos, atenuados y sin borde.
+                'circle-radius': ['case', ['==', ['get', 'generador_trafico'], true], 3, 5],
+                'circle-color': '#ffa726',
+                'circle-opacity': ['case', ['==', ['get', 'generador_trafico'], true], 0.35, 0.95],
+                'circle-stroke-width': ['case', ['==', ['get', 'generador_trafico'], true], 0, 1.5],
+                'circle-stroke-color': '#ffffff',
+              }}
+            />
+          </Source>
+        )}
+        {/* Avisos de alquiler: referencia discreta de costos de la zona, visible con evaluación activa */}
+        {locales && analysis && (
+          <Source id="locales" type="geojson" data={locales}>
+            <Layer
+              id="locales-circles"
+              type="circle"
+              paint={{
+                'circle-radius': 4,
+                'circle-color': '#d0cff0',
+                'circle-opacity': 0.85,
+                'circle-stroke-width': 1,
+                'circle-stroke-color': '#111111',
+              }}
+            />
+          </Source>
+        )}
+        {selectedPoint && (
+          <Marker longitude={selectedPoint[0]} latitude={selectedPoint[1]} anchor="bottom">
+            {/* Pin rojo clásico para el punto de análisis */}
+            <svg width="30" height="40" viewBox="0 0 24 32" aria-hidden>
+              <path
+                d="M12 0C5.4 0 0 5.4 0 12c0 9 12 20 12 20s12-11 12-20C24 5.4 18.6 0 12 0z"
+                fill="#ff4444"
+                stroke="#7f1d1d"
+                strokeWidth="1"
+              />
+              <circle cx="12" cy="12" r="4.5" fill="#ffffff" />
+            </svg>
+          </Marker>
+        )}
+        {analysis?.optimalPoint && (
+          <Marker longitude={analysis.optimalPoint[0]} latitude={analysis.optimalPoint[1]}>
+            {/* Mayor vacío de competencia (Voronoi): mitigante territorial */}
+            <div className="flex flex-col items-center" title="Zona de menor competencia">
+              <div className="h-5 w-5 rounded-full border-2 border-background bg-success ring-4 ring-success/30" />
+              <span className="mt-1 rounded-lg bg-background/80 px-1.5 py-0.5 text-[10px] font-semibold text-success">
+                Menor competencia
+              </span>
+            </div>
+          </Marker>
+        )}
+      </Map>
+
+      {preview && <PreviewCard preview={preview} onClose={() => setPreview(null)} />}
+
+      <button
+        onClick={toggle3D}
+        className={`absolute bottom-16 right-4 z-10 hidden rounded-lg border px-3 py-2 text-sm font-semibold shadow-sm backdrop-blur-md transition-colors md:block ${
+          modo3D
+            ? 'border-[#2ee6d6] bg-[#2ee6d6]/15 text-[#2ee6d6]'
+            : 'border-secondary/30 bg-background/80 text-secondary hover:text-foreground'
+        }`}
+      >
+        {modo3D ? 'Vista 2D' : 'Vista 3D'}
+      </button>
+
+      {(searchParams.rubro || analysis) && (
+        <div className="absolute bottom-4 left-[26rem] z-10 hidden max-w-[calc(100%-34rem)] rounded-lg border border-secondary/30 bg-background/80 px-4 py-2 shadow-sm backdrop-blur-md md:block">
+          <Leyenda />
+        </div>
+      )}
+
+      {/* Pantalla inicial de carga (Doc 03, animada con framer-motion) */}
+      <AnimatePresence>
+        {(loading || !loaded) && !error && (
+          <motion.div
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+            className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-4 bg-background"
+          >
+            <motion.div
+              animate={{ scale: [1, 1.12, 1], opacity: [0.8, 1, 0.8] }}
+              transition={{ repeat: Infinity, duration: 1.6, ease: 'easeInOut' }}
+            >
+              <Image src="/logo_geospot.svg" alt="" width={72} height={77} priority />
+            </motion.div>
+            <p className="text-secondary">Renderizando ciudad y datasets...</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {error && (
+        <div className="absolute inset-x-0 top-4 mx-auto w-fit rounded-lg bg-danger px-4 py-2 text-sm">
+          {error}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Tarjeta flotante de previsualización (App Flow, Recorrido 3)
+function PreviewCard({ preview, onClose }: { preview: Preview; onClose: () => void }) {
+  return (
+    <div className="absolute left-1/2 top-4 z-20 w-80 -translate-x-1/2 rounded-lg border border-secondary/30 bg-background/80 p-4 shadow-sm backdrop-blur-md md:bottom-4 md:left-auto md:right-4 md:top-auto md:translate-x-0">
+      <button
+        onClick={onClose}
+        aria-label="Cerrar"
+        className="absolute right-2 top-2 px-1 text-secondary hover:text-foreground"
+      >
+        ✕
+      </button>
+
+      {preview.kind === 'negocio' ? (
+        <>
+          <h3 className="pr-6 font-semibold">{preview.props.nombre}</h3>
+          <p className="text-sm capitalize text-secondary">
+            {preview.props.subcategoria.replace('_', ' ')} ·{' '}
+            {preview.props.categoria_principal.replace('_', ' ')}
+          </p>
+          <span
+            className={`mt-2 inline-block rounded-lg px-2 py-0.5 text-xs font-medium ${
+              preview.props.generador_trafico
+                ? 'bg-success/15 text-success'
+                : 'bg-danger/15 text-danger'
+            }`}
+          >
+            {preview.props.generador_trafico ? 'Generador de tráfico' : 'Competencia'}
+          </span>
+        </>
+      ) : (
+        <>
+          <h3 className="pr-6 text-sm font-semibold">{preview.props.titulo}</h3>
+          <p className="mt-1 text-lg font-bold text-accent">
+            S/ {preview.props.precio_soles.toLocaleString('es-PE')}
+            <span className="text-sm font-normal text-secondary"> /mes</span>
+          </p>
+          <p className="font-mono text-xs text-secondary">
+            {preview.props.precio_m2 ? `S/ ${preview.props.precio_m2}/m²` : 'precio/m² no disponible'}
+            {preview.props.area_m2 ? ` · ${preview.props.area_m2} m²` : ''}
+          </p>
+          {preview.props.telefono_contacto ? (
+            <a
+              href={`https://wa.me/51${preview.props.telefono_contacto}?text=${encodeURIComponent(
+                `Hola, vi tu aviso "${preview.props.titulo}" y me interesa el local.`,
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 block rounded-lg bg-accent px-3 py-2 text-center text-sm font-semibold text-background"
+            >
+              Contactar por WhatsApp
+            </a>
+          ) : (
+            <a
+              href={preview.props.url_origen}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 block rounded-lg border border-accent px-3 py-2 text-center text-sm font-semibold text-accent"
+            >
+              Ver aviso original
+            </a>
+          )}
+        </>
+      )}
+    </div>
+  );
+}

@@ -1,0 +1,18 @@
+# Documento 04 — Brief UI/UX: Guía Visual y de Interacción**Estética y Vibra General**
+
+La aplicación proyecta una estética profesional, analítica y tecnológica, diseñada para transmitir confianza y precisión a emprendedores e inversores retail. Es limpia, enfocada en los datos geoespaciales y la interacción fluida con la IA. La vibra es moderna y eficiente, similar a herramientas de análisis de datos de alto nivel como Stripe o Linear, pero adaptada a un contexto urbano.**Paleta de Colores*** **Primario:** #0C00F8 (Azul Eléctrico Vibrante) - Para acentos principales, elementos activos y el Score de Viabilidad.* **Fondo:** #111111 (Casi Negro) - El fondo base de la aplicación y la barra lateral, derivado del logo.* **Texto Principal:** #F5F5F7 (Blanco Humo) - Para máxima legibilidad sobre fondo oscuro.* **Texto Secundario:** #A1A1AA (Gris Claro) - Para descripciones, etiquetas de datos y el placeholder del input.* **Acento / Call to Action (CTA):** Un gradiente del Primario #0C00F8 al Acento Claro #D0CFF0 para botones principales como "Comenzar Exploración".* **Estados (Éxito / Error):**
+* Éxito: Un verde neón vibrante (#00FF88) para el "Score Óptimo" y pines de locales disponibles.
+* Error / Alerta: Un naranja vibrante (#FF8800) para Toasts de conexión lenta y un rojo intenso (#FF4444) para Toasts de error crítico.
+
+* **Paneles/Tarjetas:** #D0CFF0 con opacidad baja (aprox. 10-15%) para un efecto de "glassmorphism" translúcido sobre el mapa.**Tipografía*** **Fuente de UI (Títulos y Cuerpo):** Inter (Google Fonts). Es una fuente sans-serif moderna, altamente legible y neutra.* **Fuente Monoespaciada (Código/Datos):** Geist Mono (o Roboto Mono). Para visualizar la extracción de parámetros JSON en el chat y métricas técnicas.* **Jerarquía:**
+* Títulos (H1, H2) en Bold (700) o Semibold (600).
+* Cuerpo de texto y datos en Regular (400).
+* Etiquetas de datos en Medium (500).**EstStyle de Componentes*** **Radio de Bordes (Border-radius):** Rounded-lg (8px) en toda la aplicación (tarjetas, botones, inputs, Toasts, paneles flotantes) para un aspecto suave y moderno.* **Sombras (Shadows):** Sombras sutiles (sm) en tarjetas y paneles flotantes para separarlos visualmente del mapa, sin drop shadows pesadas. Un borde sutil de 1px semitransparente (usando el color secundario) añade definición a los paneles.* **Botones:** Planos (flat) con el gradiente de acento para CTAs principales. Botones secundarios transparentes con borde o estado hover sutil (opacidad al 90% o un ligero cambio de color).**Modo Oscuro / Claro**
+La aplicación es estrictamente en modo oscuro por defecto para la v1. Esto resalta los colores vibrantes del mapa y los datos, y reduce la fatiga visual. El mapa base de Mapbox debe ser un estilo "dark" personalizado para integrarse con la paleta.**Apps de Referencia (Inspiración)*** Stripe (por su limpieza, uso del color y tipografía profesional).* Linear (por su eficiencia, enfoque en los datos y modo oscuro bien ejecutado).* Vercel (por su estética minimalista y profesional).**Comportamiento Responsivo (Móvil)**
+Totalmente responsive (mobile-first). En dispositivos móviles:
+
+
+* El mapa ocupa el 100% del fondo.
+* La barra lateral de chat se convierte en un *Bottom Sheet* deslizable que se expande desde la parte inferior.
+* Los paneles de información profesional y score se apilan y se muestran como otro *Bottom Sheet* superpuesto, minimizable a una pestaña inferior.
+* La navegación es intuitiva mediante gestos de deslizamiento.

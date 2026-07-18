@@ -34,11 +34,13 @@ export default function TerminalIA() {
       className="max-h-40 overflow-y-auto border-b border-secondary/30 bg-black/50 p-3 font-mono text-xs leading-relaxed"
     >
       {log.slice(0, visibles).map((paso, i) => (
-        <p key={i} className={i === log.length - 1 ? 'text-[#2ee6d6]' : 'text-secondary'}>
-          <span className="text-[#2ee6d6]">&gt;</span> {paso}
+        <p key={i} className={i === log.length - 1 ? 'text-primary' : 'text-secondary'}>
+          <span className="text-primary">&gt;</span> {paso}
         </p>
       ))}
-      {visibles < log.length && <p className="animate-pulse text-[#2ee6d6]">▋</p>}
+      {visibles < log.length && (
+        <span aria-hidden className="inline-block h-3.5 w-2 animate-pulse bg-primary align-text-bottom" />
+      )}
     </div>
   );
 }

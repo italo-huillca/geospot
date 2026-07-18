@@ -31,7 +31,7 @@ const ITEMS: { simbolo: React.ReactNode; texto: string }[] = [
     texto: 'Negocio evaluado',
   },
   {
-    simbolo: <span className="h-0.5 w-4 bg-[#2ee6d6]" />,
+    simbolo: <span className="h-0.5 w-4 bg-primary" />,
     texto: 'Área e influencia (Voronoi)',
   },
 ];

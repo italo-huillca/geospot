@@ -88,9 +88,9 @@ export default function ChatPanel() {
         {messages.map((m, i) => (
           <div
             key={i}
-            className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
+            className={`max-w-[85%] rounded-sm px-3 py-2 text-sm ${
               m.role === 'user'
-                ? 'ml-auto bg-primary text-foreground'
+                ? 'ml-auto border border-primary/40 bg-primary/10 text-foreground'
                 : m.warning
                   ? 'border border-warning/50 bg-warning/10 text-warning'
                   : m.mono
@@ -116,13 +116,9 @@ export default function ChatPanel() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Describe la solicitud de crédito..."
-          className="flex-1 rounded-lg border border-secondary/30 bg-black/30 px-3 py-2 text-sm placeholder:text-secondary focus:border-primary focus:outline-none"
+          className="flex-1 rounded-sm border border-secondary/30 bg-black/30 px-3 py-2 text-sm placeholder:text-secondary focus:border-primary focus:outline-none"
         />
-        <button
-          type="submit"
-          disabled={sending}
-          className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
-        >
+        <button type="submit" disabled={sending} className="btn-primary px-4 py-2">
           Enviar
         </button>
       </form>

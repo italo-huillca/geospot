@@ -32,7 +32,7 @@ const AREQUIPA = { longitude: -71.537, latitude: -16.3989, zoom: 14 };
 const LIMITES = { minLng: -71.65, maxLng: -71.42, minLat: -16.53, maxLat: -16.29 };
 
 // Look & feel "gemelo digital": basemap oscuro con tinte teal
-const TEAL = '#2ee6d6';
+const TEAL = '#17e0c3';
 const tintarMapa = (map: MLMap) => {
   for (const layer of map.getStyle().layers ?? []) {
     try {
@@ -120,7 +120,7 @@ export default function MapView() {
                   40,
                   '#1f6f6f',
                   100,
-                  '#2ee6d6',
+                  '#17e0c3',
                 ],
               }}
             />
@@ -182,10 +182,10 @@ export default function MapView() {
               type="circle"
               paint={{
                 'circle-radius': 4,
-                'circle-color': '#d0cff0',
+                'circle-color': '#e8a33d',
                 'circle-opacity': 0.85,
                 'circle-stroke-width': 1,
-                'circle-stroke-color': '#111111',
+                'circle-stroke-color': '#0a1310',
               }}
             />
           </Source>
@@ -221,9 +221,9 @@ export default function MapView() {
 
       <button
         onClick={toggle3D}
-        className={`absolute bottom-16 right-4 z-10 hidden rounded-lg border px-3 py-2 text-sm font-semibold shadow-sm backdrop-blur-md transition-colors md:block ${
+        className={`absolute bottom-4 right-4 z-10 hidden rounded-sm border px-3 py-2 text-sm font-semibold backdrop-blur-md transition-colors md:block ${
           modo3D
-            ? 'border-[#2ee6d6] bg-[#2ee6d6]/15 text-[#2ee6d6]'
+            ? 'border-primary bg-primary/15 text-primary'
             : 'border-secondary/30 bg-background/80 text-secondary hover:text-foreground'
         }`}
       >
@@ -231,7 +231,7 @@ export default function MapView() {
       </button>
 
       {(searchParams.rubro || analysis) && (
-        <div className="absolute bottom-4 left-[26rem] z-10 hidden max-w-[calc(100%-34rem)] rounded-lg border border-secondary/30 bg-background/80 px-4 py-2 shadow-sm backdrop-blur-md md:block">
+        <div className="panel absolute bottom-4 left-[26rem] z-10 hidden max-w-[calc(100%-34rem)] rounded-sm px-4 py-2 md:block">
           <Leyenda />
         </div>
       )}
@@ -250,12 +250,12 @@ export default function MapView() {
             >
               <Image src="/logo_geospot.svg" alt="" width={72} height={77} priority />
             </motion.div>
-            <p className="text-secondary">Renderizando ciudad y datasets...</p>
+            <p className="eyebrow">Renderizando ciudad y datasets...</p>
           </motion.div>
         )}
       </AnimatePresence>
       {error && (
-        <div className="absolute inset-x-0 top-4 mx-auto w-fit rounded-lg bg-danger px-4 py-2 text-sm">
+        <div className="absolute inset-x-0 top-4 mx-auto w-fit rounded-sm bg-danger px-4 py-2 text-sm">
           {error}
         </div>
       )}
@@ -266,13 +266,15 @@ export default function MapView() {
 // Tarjeta flotante de previsualización (App Flow, Recorrido 3)
 function PreviewCard({ preview, onClose }: { preview: Preview; onClose: () => void }) {
   return (
-    <div className="absolute left-1/2 top-4 z-20 w-80 -translate-x-1/2 rounded-lg border border-secondary/30 bg-background/80 p-4 shadow-sm backdrop-blur-md md:bottom-4 md:left-auto md:right-4 md:top-auto md:translate-x-0">
+    <div className="panel absolute left-1/2 top-4 z-20 w-80 -translate-x-1/2 rounded-sm p-4 md:bottom-16 md:left-auto md:right-4 md:top-auto md:translate-x-0">
       <button
         onClick={onClose}
         aria-label="Cerrar"
-        className="absolute right-2 top-2 px-1 text-secondary hover:text-foreground"
+        className="absolute right-2 top-2 p-1 text-secondary hover:text-foreground"
       >
-        ✕
+        <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden>
+          <path d="M2 2l8 8M10 2l-8 8" fill="none" stroke="currentColor" strokeWidth="1.5" />
+        </svg>
       </button>
 
       {preview.kind === 'negocio' ? (
@@ -299,7 +301,7 @@ function PreviewCard({ preview, onClose }: { preview: Preview; onClose: () => vo
             S/ {preview.props.precio_soles.toLocaleString('es-PE')}
             <span className="text-sm font-normal text-secondary"> /mes</span>
           </p>
-          <p className="font-mono text-xs text-secondary">
+          <p className="text-xs tabular-nums text-secondary">
             {preview.props.precio_m2 ? `S/ ${preview.props.precio_m2}/m²` : 'precio/m² no disponible'}
             {preview.props.area_m2 ? ` · ${preview.props.area_m2} m²` : ''}
           </p>
@@ -310,7 +312,7 @@ function PreviewCard({ preview, onClose }: { preview: Preview; onClose: () => vo
               )}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-3 block rounded-lg bg-accent px-3 py-2 text-center text-sm font-semibold text-background"
+              className="mt-3 block rounded-sm bg-accent px-3 py-2 text-center text-sm font-semibold text-background"
             >
               Contactar por WhatsApp
             </a>
@@ -319,7 +321,7 @@ function PreviewCard({ preview, onClose }: { preview: Preview; onClose: () => vo
               href={preview.props.url_origen}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-3 block rounded-lg border border-accent px-3 py-2 text-center text-sm font-semibold text-accent"
+              className="mt-3 block rounded-sm border border-accent px-3 py-2 text-center text-sm font-semibold text-accent"
             >
               Ver aviso original
             </a>

@@ -21,7 +21,7 @@ export default function Toasts() {
             initial={{ opacity: 0, y: -16 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -16 }}
-            className={`rounded-lg border px-4 py-2 text-sm font-medium shadow-sm backdrop-blur-md ${ESTILO[t.tone]}`}
+            className={`rounded-sm border px-4 py-2 text-sm font-medium backdrop-blur-md ${ESTILO[t.tone]}`}
           >
             {t.text}
           </motion.div>

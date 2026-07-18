@@ -48,7 +48,7 @@ export default function SidePanel() {
 
   return (
     <aside
-      className={`absolute inset-x-0 bottom-0 z-10 flex flex-col overflow-hidden rounded-t-lg border border-secondary/30 bg-background/80 shadow-sm backdrop-blur-md transition-[max-height] duration-300 md:inset-x-auto md:bottom-4 md:left-4 md:top-4 md:!max-h-none md:w-96 md:rounded-lg ${
+      className={`panel absolute inset-x-0 bottom-0 z-10 flex flex-col overflow-hidden rounded-t-sm transition-[max-height] duration-300 md:inset-x-auto md:bottom-4 md:left-4 md:top-4 md:!max-h-none md:w-96 md:rounded-sm ${
         expandido ? 'max-h-[55dvh]' : 'max-h-12'
       }`}
     >
@@ -57,25 +57,29 @@ export default function SidePanel() {
         onClick={() => setExpandido((e) => !e)}
       >
         <Image src="/logo_geospot.svg" alt="" width={22} height={24} priority />
-        <h2 className="font-semibold">GeoSpot Risk</h2>
-        <span className="ml-auto font-mono text-xs text-secondary">Riesgo territorial B2B</span>
-        <span aria-hidden className="text-xs text-secondary md:hidden">
-          {expandido ? '▼' : '▲'}
-        </span>
+        <h2 className="text-lg font-semibold">GeoSpot Risk</h2>
+        <span className="eyebrow ml-auto">Riesgo territorial B2B</span>
+        <svg
+          aria-hidden
+          width="12"
+          height="12"
+          viewBox="0 0 12 12"
+          className={`text-secondary transition-transform md:hidden ${expandido ? '' : 'rotate-180'}`}
+        >
+          <path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.5" />
+        </svg>
       </header>
 
       {mounted && (
         <form onSubmit={evaluar} className="space-y-2 border-b border-secondary/30 p-4 text-sm">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-secondary">
-            Nueva evaluación de solicitud
-          </h3>
+          <h3 className="eyebrow">Nueva evaluación de solicitud</h3>
           <div className="grid grid-cols-2 gap-2">
             <Campo label="Rubro del negocio">
               <select
                 aria-label="Rubro del negocio"
                 value={rubro}
                 onChange={(e) => setRubro(e.target.value)}
-                className="w-full rounded-lg border border-secondary/30 bg-black/30 px-2 py-2"
+                className="w-full rounded-sm border border-secondary/30 bg-black/30 px-2 py-2 focus:border-primary focus:outline-none"
               >
                 <option value="">Seleccionar…</option>
                 {Object.keys(RUBROS).map((r) => (
@@ -93,7 +97,7 @@ export default function SidePanel() {
                 placeholder="Monto (S/)"
                 value={monto}
                 onChange={(e) => setMonto(e.target.value)}
-                className="w-full rounded-lg border border-secondary/30 bg-black/30 px-2 py-2 placeholder:text-secondary"
+                className="w-full rounded-sm border border-secondary/30 bg-black/30 px-2 py-2 focus:border-primary focus:outline-none placeholder:text-secondary"
               />
             </Campo>
             <Campo label="Experiencia en el rubro">
@@ -101,7 +105,7 @@ export default function SidePanel() {
                 aria-label="Experiencia en el rubro"
                 value={experiencia}
                 onChange={(e) => setExperiencia(e.target.value)}
-                className="w-full rounded-lg border border-secondary/30 bg-black/30 px-2 py-2"
+                className="w-full rounded-sm border border-secondary/30 bg-black/30 px-2 py-2 focus:border-primary focus:outline-none"
               >
                 <option value="">Seleccionar…</option>
                 <option value="nueva">Nueva (sin experiencia)</option>
@@ -117,7 +121,7 @@ export default function SidePanel() {
                 placeholder="Capital propio (S/)"
                 value={capital}
                 onChange={(e) => setCapital(e.target.value)}
-                className="w-full rounded-lg border border-secondary/30 bg-black/30 px-2 py-2 placeholder:text-secondary"
+                className="w-full rounded-sm border border-secondary/30 bg-black/30 px-2 py-2 focus:border-primary focus:outline-none placeholder:text-secondary"
               />
             </Campo>
             <Campo label="Plazo (meses)">
@@ -128,7 +132,7 @@ export default function SidePanel() {
                 placeholder="Plazo (meses)"
                 value={plazo}
                 onChange={(e) => setPlazo(e.target.value)}
-                className="w-full rounded-lg border border-secondary/30 bg-black/30 px-2 py-2 placeholder:text-secondary"
+                className="w-full rounded-sm border border-secondary/30 bg-black/30 px-2 py-2 focus:border-primary focus:outline-none placeholder:text-secondary"
               />
             </Campo>
             <Campo label="Ventas mensuales (S/)">
@@ -139,7 +143,7 @@ export default function SidePanel() {
                 placeholder="Ventas mensuales (S/)"
                 value={ventas}
                 onChange={(e) => setVentas(e.target.value)}
-                className="w-full rounded-lg border border-secondary/30 bg-black/30 px-2 py-2 placeholder:text-secondary"
+                className="w-full rounded-sm border border-secondary/30 bg-black/30 px-2 py-2 focus:border-primary focus:outline-none placeholder:text-secondary"
               />
             </Campo>
             <Campo label="Destino del crédito" className="col-span-2">
@@ -147,7 +151,7 @@ export default function SidePanel() {
                 aria-label="Destino del crédito"
                 value={destino}
                 onChange={(e) => setDestino(e.target.value)}
-                className="w-full rounded-lg border border-secondary/30 bg-black/30 px-2 py-2"
+                className="w-full rounded-sm border border-secondary/30 bg-black/30 px-2 py-2 focus:border-primary focus:outline-none"
               >
                 <option value="">Seleccionar…</option>
                 <option value="capital_trabajo">Capital de trabajo</option>
@@ -156,15 +160,12 @@ export default function SidePanel() {
               </select>
             </Campo>
           </div>
-          <p className="text-xs text-secondary">
+          <p className={`text-xs ${selectedPoint ? 'text-success' : 'text-secondary'}`}>
             {selectedPoint
-              ? '✓ Ubicación del negocio marcada en el mapa.'
+              ? 'Ubicación del negocio marcada en el mapa.'
               : 'Haz clic en el mapa para marcar la ubicación del negocio.'}
           </p>
-          <button
-            type="submit"
-            className="w-full rounded-lg bg-primary px-4 py-2 font-semibold text-foreground transition-opacity hover:opacity-90"
-          >
+          <button type="submit" className="btn-primary w-full py-2">
             Evaluar riesgo territorial
           </button>
         </form>
@@ -180,7 +181,7 @@ export default function SidePanel() {
       </details>
 
       {searchParams.rubro || searchParams.montoSoles ? (
-        <p className="p-3 font-mono text-xs text-secondary">
+        <p className="p-3 text-xs text-secondary">
           Evaluando: {searchParams.rubro ?? 'sin rubro'}
           {searchParams.montoSoles ? ` · S/ ${searchParams.montoSoles.toLocaleString('es-PE')}` : ''}
         </p>

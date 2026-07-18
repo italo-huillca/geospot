@@ -1,21 +1,65 @@
 @import "tailwindcss";
 
-/* Paleta del Brief UI/UX (Documento 04) */
+/* Identidad: mesa de riesgo / trabajo de campo topográfico.
+   Teal de señal en vez de violeta genérico, serif editorial + mono de ficha técnica. */
 @theme {
-  --color-background: #111111;
-  --color-foreground: #f5f5f7;
-  --color-secondary: #a1a1aa;
-  --color-primary: #0c00f8;
-  --color-accent: #d0cff0;
-  --color-success: #00ff88;
+  --color-background: #0a1310;
+  --color-surface: #101a17;
+  --color-foreground: #eef2ee;
+  --color-secondary: #7d938e;
+  --color-primary: #17e0c3;
+  --color-accent: #e8a33d;
+  --color-success: #3ddc84;
   --color-warning: #ff8800;
-  --color-danger: #ff4444;
+  --color-danger: #ff4d4d;
   --font-sans: var(--font-inter);
-  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-inter);
+  --font-mono: var(--font-plex-mono);
+}
+
+:root {
+  /* controles nativos (select/option, scrollbars) en oscuro: sin popups blancos ilegibles */
+  color-scheme: dark;
+}
+
+/* color-scheme no alcanza en algunos Chromium/Linux: forzar el popup del select */
+select option {
+  background-color: #101a17;
+  color: #eef2ee;
 }
 
 body {
-  background: var(--color-background);
+  background-color: var(--color-background);
+  background-image:
+    repeating-linear-gradient(0deg, color-mix(in oklab, var(--color-primary) 7%, transparent) 0 1px, transparent 1px 48px),
+    repeating-linear-gradient(90deg, color-mix(in oklab, var(--color-primary) 7%, transparent) 0 1px, transparent 1px 48px);
   color: var(--color-foreground);
   font-family: var(--font-sans);
 }
+
+/* Chrome de "panel de instrumento": reemplaza la tarjeta glass genérica */
+.panel {
+  background: color-mix(in oklab, var(--color-surface) 90%, transparent);
+  border: 1px solid color-mix(in oklab, var(--color-primary) 20%, var(--color-secondary) 20%);
+  border-top: 2px solid var(--color-primary);
+  backdrop-filter: blur(8px);
+}
+
+.eyebrow {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-secondary);
+}
+
+.btn-primary {
+  font-size: 0.875rem;
+  font-weight: 600;
+  background: var(--color-primary);
+  color: var(--color-background);
+  border: 1px solid var(--color-primary);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.btn-primary:hover { background: transparent; color: var(--color-primary); }
+.btn-primary:disabled { opacity: 0.45; }
